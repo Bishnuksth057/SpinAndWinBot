@@ -1,0 +1,79 @@
+import random
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+
+# In-memory user wallet
+user_wallets = {}
+
+MIN_DEPOSIT =15
+MIN_WITHDRAW =45 
+
+# Start command
+def get_main_keyboard():
+    return ReplyKeyboardMarkup([
+        ['/balance', '/deposit'],
+        ['/spin', '/withdraw']
+    ], resize_keyboard=True)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    user_wallets.setdefault(user_id, 0)
+    await update.message.reply_text(
+        "Welcome to Spin & Win Bot 🎰!\nUse the buttons below to play.",
+        reply_markup=get_main_keyboard()
+    )
+
+# Balance command
+async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    balance = user_wallets.get(user_id, 0)
+    await update.message.reply_text(f"💰 Your balance is Rs.or USD or USDT= {balance}")
+
+# Deposit command
+async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        f"📥 To deposit, send Rs. {MIN_DEPOSIT}+ to eSewa=9841073920 OR Khalti ID= 9809844714 OR IME Pay=9841073920 OR PayPal(minimum deposit is 0.11USD)=   bishnukumarshrestha255044@gmail.com    OR Binance USDT deposit tron(trc 20)network is minimum 0.11address=    TXtzfEjuQP2kBEYNqbgGvzkN8BBhGATSax    OR Bitget Wallet diposit USDT on the Polygon network minimum is 0.11 address=         0x062Fb7b2c2e6a61BC3643B2Dc3D7338649b77756    . Note: After sending the money, send a screenshot or photo of the proof of successful payment to the link    https://t.me/mubi057     . It will appear in your balance within 15-45 minutes of sending And you will be able to spin and earn. (then send confirm _deposit after payment )"
+    )
+
+# Confirm deposit (manual)
+async def confirm_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    user_wallets[user_id] = user_wallets.get(user_id, 0) + MIN_DEPOSIT
+    await update.message.reply_text("✅ Rs. 15  deposited to your wallet!")
+
+# Spin game
+async def spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    balance = user_wallets.get(user_id, 0)
+    if balance < 5:
+        await update.message.reply_text("❌ Not enough balance to spin (Rs. 5 OR 0.04 usd/usdt needed).")
+        return
+    user_wallets[user_id] -= 5
+    if random.random() < 0.5:
+        user_wallets[user_id] += 10
+        await update.message.reply_text("🎉 You won Rs. 10!")
+    else:
+        await update.message.reply_text("😢 You lost this time. Try again!")
+
+# Withdraw command
+async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    balance = user_wallets.get(user_id, 0)
+    if balance < MIN_WITHDRAW:
+        await update.message.reply_text(f"❌ Minimum  usd/usdt 0.33 OR Rs. {MIN_WITHDRAW} required to withdraw.")
+        return
+    await update.message.reply_text(f"📤 Send your eSewa/Khalti/IMEpay number /Paypal email/Binance usdt tron trc20 network wallet address /Bitget Wallet usdt poligon network address to admin or     https://t.me/mubi057  link  for Rs. OR usdt/usd {balance} withdrawal. Admin will process it shortly.")
+    user_wallets[user_id] = 0
+
+# Main
+app = ApplicationBuilder().token("7734449850:AAERA_47O3yoNhs8sT4uOhRILIaKEDmoSD0").build()
+
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("balance", balance))
+app.add_handler(CommandHandler("deposit", deposit))
+app.add_handler(CommandHandler("confirm_deposit", confirm_deposit))
+app.add_handler(CommandHandler("spin", spin))
+app.add_handler(CommandHandler("withdraw", withdraw))
+
+print("Bot is running...")
+app.run_polling()
